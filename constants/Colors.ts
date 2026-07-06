@@ -23,8 +23,8 @@ export const LightTheme: Theme = {
 };
 
 export const DarkTheme: Theme = {
-  background: "#2F016B",
-  card: "#390282",
+  background: "#180038",
+  card: "#230050",
   text: "#E8F5EF",
   subtext: "#7EA891",
   primary: "#8230ee",
