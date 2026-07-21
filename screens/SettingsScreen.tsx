@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { usePreferences } from "../context/PreferencesContext";
 import { AppText } from "../components/AppText";
+import { APP_VERSION } from "../configuration/config";
 
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -183,13 +184,22 @@ const SettingsScreen: React.FC = () => {
             ))}
           </View>
         </View>
+
+        <AppText
+          variant="light"
+          style={[styles.version, { color: theme.subtext }]}
+        >
+          v{APP_VERSION}
+        </AppText>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { 
+    flex: 1 
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -201,8 +211,11 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: "center",
   },
-  title: { fontSize: 24 },
+  title: { 
+    fontSize: 24 
+  },
   body: {
+    flex: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
     gap: 8,
@@ -222,7 +235,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
   },
-  rowLabel: { fontSize: 15 },
+  rowLabel: { 
+    fontSize: 15 
+  },
   symbolInput: {
     fontSize: 15,
     borderWidth: 1,
@@ -242,6 +257,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 10,
+  },
+  version: {
+    marginTop: "auto",
+    paddingBottom: 24,
+    textAlign: "center",
+    fontSize: 13,
   },
 });
 
