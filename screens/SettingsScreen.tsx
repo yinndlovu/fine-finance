@@ -12,6 +12,7 @@ import { AppText } from "../components/AppText";
 import { APP_VERSION } from "../configuration/config";
 
 const SettingsScreen: React.FC = () => {
+  // variables
   const navigation = useNavigation<any>();
   const { theme, themeMode, setThemeMode } = useTheme();
   const insets = useSafeAreaInsets();
@@ -22,6 +23,7 @@ const SettingsScreen: React.FC = () => {
     setCurrencyPosition,
   } = usePreferences();
 
+  // states
   const [symbolInput, setSymbolInput] = useState(currencySymbol);
 
   const handleSymbolBlur = () => {

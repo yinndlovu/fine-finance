@@ -4,10 +4,10 @@
     "slug": "fine-finance",
     "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/app-background.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./src/assets/app-background.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0A0710"
     },
@@ -21,11 +21,12 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "softwareKeyboardLayoutMode": "pan",
       "predictiveBackGestureEnabled": false,
       "package": "com.yinn.finefinance"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icon.png"
     },
     "plugins": ["expo-splash-screen", "expo-status-bar"],
     "extra": {

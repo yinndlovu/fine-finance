@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // internal
 import { useTheme } from "../context/ThemeContext";
@@ -35,9 +36,13 @@ const AddItemModal: React.FC<Props> = ({
   editItem,
   onClose,
 }) => {
+  // variables
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { addItem, updateItem } = useBudget();
   const isEditing = !!editItem;
+
+  // states
   const [name, setName] = useState("");
   const [amountText, setAmountText] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
@@ -115,7 +120,15 @@ const AddItemModal: React.FC<Props> = ({
         style={styles.overlay}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={[styles.sheet, { backgroundColor: theme.card }]}>
+        <View
+          style={[
+            styles.sheet,
+            {
+              backgroundColor: theme.card,
+              paddingBottom: Math.max(insets.bottom, 24),
+            },
+          ]}
+        >
           {/* header */}
           <View style={styles.modalHeader}>
             <AppText
@@ -286,7 +299,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  modalTitle: { fontSize: 20 },
+  modalTitle: { 
+    fontSize: 20 
+  },
   fieldLabel: {
     fontSize: 12,
     marginBottom: 6,
@@ -317,7 +332,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 10,
   },
-  errorText: { marginBottom: 10, fontSize: 13 },
+  errorText: { 
+    marginBottom: 10, 
+    fontSize: 13 
+  },
   submitBtn: {
     paddingVertical: 14,
     borderRadius: 14,
@@ -325,7 +343,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 8,
   },
-  submitText: { color: "white", fontSize: 16 },
+  submitText: { 
+    color: "white", 
+    fontSize: 16 
+  },
 });
 
 export default AddItemModal;

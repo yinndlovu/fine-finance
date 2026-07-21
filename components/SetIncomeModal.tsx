@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // internal
 import { useBudget } from "../context/BudgetContext";
@@ -32,6 +33,7 @@ const SetIncomeModal: React.FC<Props> = ({
   onClose,
 }) => {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { setMonthIncome } = useBudget();
   const { currencySymbol } = usePreferences();
   const [text, setText] = useState("");
@@ -65,7 +67,15 @@ const SetIncomeModal: React.FC<Props> = ({
         style={styles.overlay}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={[styles.sheet, { backgroundColor: theme.card }]}>
+        <View
+          style={[
+            styles.sheet,
+            {
+              backgroundColor: theme.card,
+              paddingBottom: Math.max(insets.bottom, 24),
+            },
+          ]}
+        >
           <View style={styles.header}>
             <AppText
               variant="bold"
