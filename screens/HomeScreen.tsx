@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { StyleSheet, View, FlatList, TouchableOpacity } from "react-native";
+import {
+  Alert,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  FlatList,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,22 +23,206 @@ import {
   prevMonthKey,
   isCurrentMonth,
   isFutureMonth,
-  toMonthKey,
+  prevMonthKey as getPrevKey,
 } from "../utils/monthUtils";
 import AddItemModal from "../components/AddItemModal";
+import SetIncomeModal from "../components/SetIncomeModal";
+import ItemActionSheet from "../components/ItemActionSheet";
+import CategoryBreakdown from "../components/CategoryBreakdown";
+import { BudgetItem } from "../types/budget";
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const { activeMonthKey, setActiveMonthKey } = useBudget();
+  const {
+    activeMonthKey,
+    setActiveMonthKey,
+    removeItem,
+    toggleSpent,
+    months,
+    copyItemsFromPrevMonth,
+  } = useBudget();
   const { currencySymbol, currencyPosition } = usePreferences();
-  const { items, total, formattedTotal, isEmpty } = useBudgetMonth();
+  const {
+    items,
+    isEmpty,
+    income,
+    budgeted,
+    expense,
+    planned,
+    disposable,
+    fIncome,
+    fBudgeted,
+    fExpense,
+    fPlanned,
+    fDisposable,
+    categoryTotals,
+  } = useBudgetMonth();
 
   const [isAddModalVisible, setAddModalVisible] = useState(false);
+  const [isIncomeModalVisible, setIncomeModalVisible] = useState(false);
+  const [actionItem, setActionItem] = useState<BudgetItem | null>(null);
+  const [editItem, setEditItem] = useState<BudgetItem | undefined>(undefined);
 
   const isCurrent = isCurrentMonth(activeMonthKey);
   const isFuture = isFutureMonth(activeMonthKey);
+  const isDisposableNegative = disposable < 0;
+
+  /** show "copy from last month" prompt only when the current month is empty
+   * and the previous month has items
+   */
+  const prevKey = getPrevKey(activeMonthKey);
+  const prevHasItems = (months[prevKey]?.items?.length ?? 0) > 0;
+  const showCopyPrompt = isEmpty && prevHasItems;
+
+  const handleLongPress = (item: BudgetItem) => {
+    setActionItem(item);
+  };
+
+  const handleEdit = (item: BudgetItem) => {
+    setEditItem(item);
+    setAddModalVisible(true);
+  };
+
+  const handleDelete = (item: BudgetItem) => {
+    Alert.alert("delete item", `remove "${item.name}"?`, [
+      { text: "cancel", style: "cancel" },
+      {
+        text: "delete",
+        style: "destructive",
+        onPress: () => removeItem(activeMonthKey, item.id),
+      },
+    ]);
+  };
+
+  const handleAddClose = () => {
+    setAddModalVisible(false);
+    setEditItem(undefined);
+  };
+
+  // summary stats
+  const StatBox = ({
+    label,
+    value,
+    color,
+    onPress,
+    small,
+  }: {
+    label: string;
+    value: string;
+    color: string;
+    onPress?: () => void;
+    small?: boolean;
+  }) => (
+    <TouchableOpacity
+      style={[
+        styles.statBox,
+        { backgroundColor: theme.card, borderColor: theme.accent },
+      ]}
+      onPress={onPress}
+      disabled={!onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
+      <AppText
+        variant="light"
+        style={[styles.statLabel, { color: theme.subtext }]}
+      >
+        {label}
+      </AppText>
+      <AppText
+        variant="bold"
+        style={[styles.statValue, { color }, small && styles.statValueSmall]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
+        {value}
+      </AppText>
+      {onPress && (
+        <Ionicons
+          name="pencil-outline"
+          size={11}
+          color={theme.subtext}
+          style={styles.editIcon}
+        />
+      )}
+    </TouchableOpacity>
+  );
+
+  // single item card
+  const renderItem = ({ item }: { item: BudgetItem }) => (
+    <TouchableOpacity
+      onPress={() => toggleSpent(activeMonthKey, item.id)}
+      onLongPress={() => handleLongPress(item)}
+      delayLongPress={400}
+      activeOpacity={0.75}
+      style={[
+        styles.card,
+        {
+          backgroundColor: item.spent ? theme.accent : theme.card,
+          borderColor: item.spent ? theme.negative + "60" : theme.accent,
+          opacity: item.spent ? 0.85 : 1,
+        },
+      ]}
+    >
+      {/* tick circle */}
+      <View
+        style={[
+          styles.tick,
+          {
+            borderColor: item.spent ? theme.negative : theme.subtext + "60",
+            backgroundColor: item.spent ? theme.negative : "transparent",
+          },
+        ]}
+      >
+        {item.spent && <Ionicons name="checkmark" size={12} color="white" />}
+      </View>
+
+      <View style={styles.cardCenter}>
+        <AppText
+          variant="bold"
+          style={[
+            styles.cardName,
+            { color: theme.text },
+            item.spent && styles.strikethrough,
+          ]}
+          numberOfLines={1}
+        >
+          {item.name}
+        </AppText>
+        <AppText
+          variant="light"
+          style={[styles.cardCategory, { color: theme.subtext }]}
+        >
+          {item.category}
+          {item.spent ? "  ·  spent" : ""}
+        </AppText>
+      </View>
+
+      <View style={styles.cardRight}>
+        <AppText
+          variant="medium"
+          style={[
+            styles.cardAmount,
+            { color: item.spent ? theme.negative : theme.primary },
+          ]}
+        >
+          {formatAmount(item.amount, currencySymbol, currencyPosition)}
+        </AppText>
+        <TouchableOpacity
+          onPress={() => handleLongPress(item)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.moreBtn}
+        >
+          <Ionicons
+            name="ellipsis-horizontal"
+            size={16}
+            color={theme.subtext}
+          />
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <View
@@ -66,16 +256,12 @@ const HomeScreen: React.FC = () => {
                 <TouchableOpacity
                   onPress={() => navigation.navigate("History")}
                   style={styles.iconButton}
-                  accessibilityRole="button"
-                  accessibilityLabel="View history"
                 >
                   <Ionicons name="time-outline" size={24} color={theme.text} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => navigation.navigate("Settings")}
                   style={styles.iconButton}
-                  accessibilityRole="button"
-                  accessibilityLabel="Settings"
                 >
                   <Ionicons
                     name="settings-outline"
@@ -96,8 +282,6 @@ const HomeScreen: React.FC = () => {
               <TouchableOpacity
                 onPress={() => setActiveMonthKey(prevMonthKey(activeMonthKey))}
                 style={styles.monthArrow}
-                accessibilityRole="button"
-                accessibilityLabel="Previous month"
               >
                 <Ionicons name="chevron-back" size={20} color={theme.subtext} />
               </TouchableOpacity>
@@ -135,8 +319,6 @@ const HomeScreen: React.FC = () => {
               <TouchableOpacity
                 onPress={() => setActiveMonthKey(nextMonthKey(activeMonthKey))}
                 style={styles.monthArrow}
-                accessibilityRole="button"
-                accessibilityLabel="Next month"
               >
                 <Ionicons
                   name="chevron-forward"
@@ -146,28 +328,36 @@ const HomeScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-            {/* total hero */}
-            {!isEmpty && (
-              <View
-                style={[
-                  styles.totalHero,
-                  { backgroundColor: theme.card, borderColor: theme.accent },
-                ]}
-              >
-                <AppText
-                  variant="light"
-                  style={[styles.totalLabel, { color: theme.subtext }]}
-                >
-                  total budgeted
-                </AppText>
-                <AppText
-                  variant="bold"
-                  style={[styles.totalAmount, { color: theme.primary }]}
-                >
-                  {formattedTotal}
-                </AppText>
-              </View>
-            )}
+            {/* 4-stat summary card */}
+            <View style={styles.statsGrid}>
+              {/* income */}
+              <StatBox
+                label="income"
+                value={income > 0 ? fIncome : "set income"}
+                color={theme.positive}
+                onPress={() => setIncomeModalVisible(true)}
+              />
+              {/* budgeted */}
+              <StatBox
+                label="budgeted"
+                value={fBudgeted}
+                color={theme.primary}
+              />
+              {/* expense */}
+              <StatBox
+                label="expense"
+                value={fExpense}
+                color={theme.negative}
+                small
+              />
+              {/* disposable */}
+              <StatBox
+                label="disposable"
+                value={fDisposable}
+                color={isDisposableNegative ? theme.negative : theme.positive}
+                small
+              />
+            </View>
 
             {/* section header */}
             <View style={styles.sectionRow}>
@@ -178,10 +368,11 @@ const HomeScreen: React.FC = () => {
                 {isEmpty ? "" : "items"}
               </AppText>
               <TouchableOpacity
-                onPress={() => setAddModalVisible(true)}
+                onPress={() => {
+                  setEditItem(undefined);
+                  setAddModalVisible(true);
+                }}
                 style={styles.addButton}
-                accessibilityRole="button"
-                accessibilityLabel="Add budget item"
               >
                 <Ionicons
                   name="add-circle-outline"
@@ -190,6 +381,33 @@ const HomeScreen: React.FC = () => {
                 />
               </TouchableOpacity>
             </View>
+
+            {/* copy from prev month prompt */}
+            {showCopyPrompt && (
+              <TouchableOpacity
+                onPress={() => copyItemsFromPrevMonth(activeMonthKey)}
+                style={[
+                  styles.copyPrompt,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.primary + "60",
+                  },
+                ]}
+              >
+                <Ionicons name="copy-outline" size={18} color={theme.primary} />
+                <AppText
+                  variant="medium"
+                  style={[styles.copyPromptText, { color: theme.primary }]}
+                >
+                  copy items from {monthLabel(prevKey)}
+                </AppText>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={theme.primary}
+                />
+              </TouchableOpacity>
+            )}
 
             {/* empty state */}
             {isEmpty && (
@@ -220,8 +438,6 @@ const HomeScreen: React.FC = () => {
                 <TouchableOpacity
                   onPress={() => setAddModalVisible(true)}
                   style={[styles.emptyCta, { backgroundColor: theme.primary }]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Add your first budget item"
                 >
                   <Ionicons name="add" size={18} color="white" />
                   <AppText variant="bold" style={{ color: "white" }}>
@@ -232,41 +448,34 @@ const HomeScreen: React.FC = () => {
             )}
           </View>
         }
-        renderItem={({ item }) => (
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: theme.card, borderColor: theme.accent },
-            ]}
-          >
-            <View style={styles.cardLeft}>
-              <AppText
-                variant="bold"
-                style={[styles.cardName, { color: theme.text }]}
-              >
-                {item.name}
-              </AppText>
-              <AppText
-                variant="light"
-                style={[styles.cardCategory, { color: theme.subtext }]}
-              >
-                {item.category}
-              </AppText>
-            </View>
-            <AppText
-              variant="medium"
-              style={[styles.cardAmount, { color: theme.primary }]}
-            >
-              {formatAmount(item.amount, currencySymbol, currencyPosition)}
-            </AppText>
-          </View>
-        )}
+        renderItem={renderItem}
+        ListFooterComponent={
+          !isEmpty ? (
+            <CategoryBreakdown rows={categoryTotals} totalBudgeted={budgeted} />
+          ) : null
+        }
       />
 
+      {/* modals */}
       <AddItemModal
         isVisible={isAddModalVisible}
         activeMonthKey={activeMonthKey}
-        onClose={() => setAddModalVisible(false)}
+        editItem={editItem}
+        onClose={handleAddClose}
+      />
+
+      <SetIncomeModal
+        isVisible={isIncomeModalVisible}
+        monthKey={activeMonthKey}
+        currentIncome={income}
+        onClose={() => setIncomeModalVisible(false)}
+      />
+
+      <ItemActionSheet
+        item={actionItem}
+        onClose={() => setActionItem(null)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     </View>
   );
@@ -312,7 +521,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingVertical: 10,
     paddingHorizontal: 4,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   monthArrow: {
     width: 40,
@@ -337,28 +546,41 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "white",
   },
-  totalHero: {
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     width: "100%",
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    alignItems: "center",
+    gap: 10,
+    marginBottom: 14,
   },
-  totalLabel: {
-    fontSize: 13,
+  statBox: {
+    flex: 1,
+    minWidth: "45%",
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+  },
+  statLabel: {
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
     marginBottom: 4,
   },
-  totalAmount: {
-    fontSize: 34,
+  statValue: {
+    fontSize: 20,
+  },
+  statValueSmall: {
+    fontSize: 17,
+  },
+  editIcon: {
+    marginTop: 4,
   },
   sectionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
-    marginTop: 4,
+    marginTop: 2,
     marginBottom: 8,
   },
   sectionLabel: {
@@ -371,6 +593,21 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: "center",
     justifyContent: "center",
+  },
+  copyPrompt: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    width: "100%",
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  copyPromptText: {
+    flex: 1,
+    fontSize: 14,
   },
   emptyHero: {
     width: "100%",
@@ -391,27 +628,45 @@ const styles = StyleSheet.create({
   },
   card: {
     marginHorizontal: 20,
-    marginVertical: 6,
-    padding: 18,
+    marginVertical: 5,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: 12,
   },
-  cardLeft: {
+  tick: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardCenter: {
     flex: 1,
-    marginRight: 12,
   },
   cardName: {
-    fontSize: 16,
+    fontSize: 15,
   },
   cardCategory: {
     fontSize: 12,
-    marginTop: 3,
+    marginTop: 2,
+  },
+  strikethrough: {
+    textDecorationLine: "line-through",
+  },
+  cardRight: {
+    alignItems: "flex-end",
+    gap: 4,
   },
   cardAmount: {
-    fontSize: 16,
+    fontSize: 15,
+  },
+  moreBtn: {
+    padding: 2,
   },
 });
 

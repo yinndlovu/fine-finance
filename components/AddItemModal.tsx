@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+// external
+import React, { useEffect, useState } from "react";
 import {
-  StyleSheet,
-  View,
-  Modal,
-  TouchableOpacity,
-  TextInput,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import "react-native-get-random-values";
@@ -24,37 +25,48 @@ import { CATEGORIES } from "../constants/Categories";
 interface Props {
   isVisible: boolean;
   activeMonthKey: string;
+  editItem?: BudgetItem;
   onClose: () => void;
 }
 
 const AddItemModal: React.FC<Props> = ({
   isVisible,
   activeMonthKey,
+  editItem,
   onClose,
 }) => {
   const { theme } = useTheme();
-  const { addItem } = useBudget();
-
+  const { addItem, updateItem } = useBudget();
+  const isEditing = !!editItem;
   const [name, setName] = useState("");
   const [amountText, setAmountText] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
 
-  const reset = () => {
-    setName("");
-    setAmountText("");
-    setCategory(CATEGORIES[0]);
-    setNotes("");
-    setError("");
-  };
+  // populate fields when opening in edit mode
+  useEffect(() => {
+    if (isVisible) {
+      if (editItem) {
+        setName(editItem.name);
+        setAmountText(String(editItem.amount));
+        setCategory(editItem.category);
+        setNotes(editItem.notes ?? "");
+      } else {
+        setName("");
+        setAmountText("");
+        setCategory(CATEGORIES[0]);
+        setNotes("");
+      }
+      setError("");
+    }
+  }, [isVisible, editItem]);
 
   const handleClose = () => {
-    reset();
     onClose();
   };
 
-  const handleAdd = () => {
+  const handleSubmit = () => {
     const trimmedName = name.trim();
     const parsedAmount = parseFloat(amountText.replace(",", "."));
 
@@ -67,19 +79,28 @@ const AddItemModal: React.FC<Props> = ({
       return;
     }
 
-    // use the first day of the active month as the createdAt date
-    const createdAt = fromMonthKey(activeMonthKey).toISOString();
+    if (isEditing && editItem) {
+      updateItem(activeMonthKey, {
+        ...editItem,
+        name: trimmedName,
+        amount: parsedAmount,
+        category,
+        notes: notes.trim() || undefined,
+      });
+    } else {
+      const createdAt = fromMonthKey(activeMonthKey).toISOString();
+      const item: BudgetItem = {
+        id: uuidv4(),
+        name: trimmedName,
+        amount: parsedAmount,
+        category,
+        notes: notes.trim() || undefined,
+        createdAt,
+        spent: false,
+      };
+      addItem(item);
+    }
 
-    const item: BudgetItem = {
-      id: uuidv4(),
-      name: trimmedName,
-      amount: parsedAmount,
-      category,
-      notes: notes.trim() || undefined,
-      createdAt,
-    };
-
-    addItem(item);
     handleClose();
   };
 
@@ -101,7 +122,7 @@ const AddItemModal: React.FC<Props> = ({
               variant="bold"
               style={[styles.modalTitle, { color: theme.text }]}
             >
-              add item
+              {isEditing ? "edit item" : "add item"}
             </AppText>
             <TouchableOpacity
               onPress={handleClose}
@@ -222,28 +243,22 @@ const AddItemModal: React.FC<Props> = ({
               ]}
             />
 
-            {/* error */}
             {!!error && (
               <AppText
                 variant="light"
-                style={[
-                  styles.errorText,
-                  { color: theme.negative ?? "#D94F3D" },
-                ]}
+                style={[styles.errorText, { color: theme.negative }]}
               >
                 {error}
               </AppText>
             )}
 
-            {/* submit */}
             <TouchableOpacity
-              onPress={handleAdd}
+              onPress={handleSubmit}
               style={[styles.submitBtn, { backgroundColor: theme.primary }]}
               accessibilityRole="button"
-              accessibilityLabel="Add budget item"
             >
               <AppText variant="bold" style={styles.submitText}>
-                add item
+                {isEditing ? "save changes" : "add item"}
               </AppText>
             </TouchableOpacity>
           </ScrollView>
@@ -302,10 +317,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 10,
   },
-  errorText: {
-    marginBottom: 10,
-    fontSize: 13,
-  },
+  errorText: { marginBottom: 10, fontSize: 13 },
   submitBtn: {
     paddingVertical: 14,
     borderRadius: 14,
@@ -313,10 +325,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 8,
   },
-  submitText: {
-    color: "white",
-    fontSize: 16,
-  },
+  submitText: { color: "white", fontSize: 16 },
 });
 
 export default AddItemModal;

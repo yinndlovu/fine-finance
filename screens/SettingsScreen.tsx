@@ -1,11 +1,6 @@
+// external
 import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  Switch,
-  TextInput,
-} from "react-native";
+import { StyleSheet, View, TouchableOpacity, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,7 +12,7 @@ import { AppText } from "../components/AppText";
 
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { theme, isDark, toggleTheme } = useTheme();
+  const { theme, themeMode, setThemeMode } = useTheme();
   const insets = useSafeAreaInsets();
   const {
     currencySymbol,
@@ -30,8 +25,11 @@ const SettingsScreen: React.FC = () => {
 
   const handleSymbolBlur = () => {
     const trimmed = symbolInput.trim();
-    if (trimmed) setCurrencySymbol(trimmed);
-    else setSymbolInput(currencySymbol);
+    if (trimmed) {
+      setCurrencySymbol(trimmed);
+    } else {
+      setSymbolInput(currencySymbol);
+    }
   };
 
   return (
@@ -79,14 +77,39 @@ const SettingsScreen: React.FC = () => {
             variant="regular"
             style={[styles.rowLabel, { color: theme.text }]}
           >
-            dark mode
+            theme
           </AppText>
-          <Switch
-            value={isDark}
-            onValueChange={toggleTheme}
-            trackColor={{ false: theme.accent, true: theme.primary }}
-            thumbColor={isDark ? "white" : theme.subtext}
-          />
+          <View style={styles.segmented}>
+            {(
+              [
+                { mode: "system", label: "auto" },
+                { mode: "light", label: "light" },
+                { mode: "dark", label: "dark" },
+              ] as const
+            ).map(({ mode, label }) => (
+              <TouchableOpacity
+                key={mode}
+                onPress={() => setThemeMode(mode)}
+                style={[
+                  styles.segment,
+                  {
+                    backgroundColor:
+                      themeMode === mode ? theme.primary : theme.accent,
+                  },
+                ]}
+              >
+                <AppText
+                  variant="medium"
+                  style={{
+                    color: themeMode === mode ? "white" : theme.subtext,
+                    fontSize: 13,
+                  }}
+                >
+                  {label}
+                </AppText>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* currency */}

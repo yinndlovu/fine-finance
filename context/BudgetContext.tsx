@@ -11,33 +11,52 @@ import {
 
 // internal
 import { BudgetItem, MonthBudget } from "../types/budget";
-import { toMonthKey } from "../utils/monthUtils";
+import { toMonthKey, prevMonthKey } from "../utils/monthUtils";
 
 // types
 type BudgetContextType = {
-  /** all months that have data, keyed by "YYYY-MM" */
+  // all months that have data, keyed by "YYYY-MM"
   months: Record<string, MonthBudget>;
-  /** currently viewed month key ("YYYY-MM") */
+  // currently viewed month key ("YYYY-MM")
   activeMonthKey: string;
   setActiveMonthKey: (key: string) => void;
   addItem: (item: BudgetItem) => void;
   removeItem: (monthKey: string, itemId: string) => void;
   updateItem: (monthKey: string, item: BudgetItem) => void;
+  toggleSpent: (monthKey: string, itemId: string) => void;
+  setMonthIncome: (monthKey: string, income: number) => void;
+  copyItemsFromPrevMonth: (monthKey: string) => void;
   isBudgetLoaded: boolean;
-
-  /**
-   * cloud sync hook - replace with real API call
-   */
   syncToCloud: () => Promise<void>;
 };
 
-// constants
 const STORAGE_KEYS = {
   months: "budget.months",
   activeMonthKey: "budget.activeMonthKey",
 } as const;
 
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
+
+const validateItem = (i: any): BudgetItem | null => {
+  if (!i || typeof i !== "object") {
+    return null;
+  }
+  const id = String(i.id ?? "");
+  const name = String(i.name ?? "");
+  const createdAt = String(i.createdAt ?? "");
+  if (!id || !name || !createdAt) {
+    return null;
+  }
+  return {
+    id,
+    name,
+    amount: Number(i.amount ?? 0),
+    category: String(i.category ?? "other"),
+    notes: typeof i.notes === "string" ? i.notes : undefined,
+    createdAt,
+    spent: Boolean(i.spent ?? false),
+  };
+};
 
 export const BudgetProvider = ({ children }: { children: ReactNode }) => {
   const [months, setMonths] = useState<Record<string, MonthBudget>>({});
@@ -75,17 +94,10 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
               ) {
                 validated[key] = {
                   monthKey: val.monthKey,
+                  income: Number(val.income ?? 0),
                   items: (val.items as any[])
-                    .filter((i) => i && typeof i === "object")
-                    .map((i) => ({
-                      id: String(i.id ?? ""),
-                      name: String(i.name ?? ""),
-                      amount: Number(i.amount ?? 0),
-                      category: String(i.category ?? ""),
-                      notes: typeof i.notes === "string" ? i.notes : undefined,
-                      createdAt: String(i.createdAt ?? ""),
-                    }))
-                    .filter((i) => i.id && i.name && i.createdAt),
+                    .map(validateItem)
+                    .filter((i): i is BudgetItem => i !== null),
                 };
               }
             }
@@ -113,7 +125,7 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  // persist months to AsyncStorage whenever they change
+  // persist months
   useEffect(() => {
     if (!isBudgetLoaded) return;
     AsyncStorage.setItem(STORAGE_KEYS.months, JSON.stringify(months)).catch(
@@ -123,7 +135,9 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
 
   // persist active month key
   useEffect(() => {
-    if (!isBudgetLoaded) return;
+    if (!isBudgetLoaded) {
+      return;
+    }
     AsyncStorage.setItem(STORAGE_KEYS.activeMonthKey, activeMonthKey).catch(
       () => {},
     );
@@ -133,16 +147,12 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
   const setActiveMonthKey = (key: string) => setActiveMonthKeyState(key);
 
   const addItem = (item: BudgetItem) => {
-    // infer which month the item belongs to from its createdAt date
     const monthKey = toMonthKey(new Date(item.createdAt));
     setMonths((prev) => {
-      const existing = prev[monthKey] ?? { monthKey, items: [] };
+      const existing = prev[monthKey] ?? { monthKey, income: 0, items: [] };
       return {
         ...prev,
-        [monthKey]: {
-          ...existing,
-          items: [item, ...existing.items],
-        },
+        [monthKey]: { ...existing, items: [item, ...existing.items] },
       };
     });
   };
@@ -150,7 +160,9 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
   const removeItem = (monthKey: string, itemId: string) => {
     setMonths((prev) => {
       const existing = prev[monthKey];
-      if (!existing) return prev;
+      if (!existing) {
+        return prev;
+      }
       return {
         ...prev,
         [monthKey]: {
@@ -177,14 +189,70 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const toggleSpent = (monthKey: string, itemId: string) => {
+    setMonths((prev) => {
+      const existing = prev[monthKey];
+      if (!existing) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [monthKey]: {
+          ...existing,
+          items: existing.items.map((i) =>
+            i.id === itemId ? { ...i, spent: !i.spent } : i,
+          ),
+        },
+      };
+    });
+  };
+
+  const setMonthIncome = (monthKey: string, income: number) => {
+    setMonths((prev) => {
+      const existing = prev[monthKey] ?? { monthKey, income: 0, items: [] };
+      return { ...prev, [monthKey]: { ...existing, income } };
+    });
+  };
+
   /**
-   * cloud sync stub - to be implemented when backend is ready
-   * the context API doesn't change; screens just call syncToCloud() wherever
-   * appropriate (e.g., after addItem, on app foreground, on pull-to-refresh)
+   * copies items from the previous month into this month (resetting spent),
+   * also carries the income forward. Only works if this month has no items yet
    */
+  const copyItemsFromPrevMonth = (monthKey: string) => {
+    setMonths((prev) => {
+      const prevKey = prevMonthKey(monthKey);
+      const source = prev[prevKey];
+      if (!source) {
+        return prev;
+      }
+      const existing = prev[monthKey] ?? { monthKey, income: 0, items: [] };
+      // don't overwrite if already has items
+      if (existing.items.length > 0) {
+        return prev;
+      }
+      const copiedItems: BudgetItem[] = source.items.map((i) => ({
+        ...i,
+        id: `${i.id}_copy_${monthKey}`,
+        spent: false,
+        createdAt: new Date(
+          parseInt(monthKey.slice(0, 4)),
+          parseInt(monthKey.slice(5, 7)) - 1,
+          1,
+        ).toISOString(),
+      }));
+      return {
+        ...prev,
+        [monthKey]: {
+          monthKey,
+          income: existing.income > 0 ? existing.income : source.income,
+          items: copiedItems,
+        },
+      };
+    });
+  };
+
   const syncToCloud = async (): Promise<void> => {
-    // TODO: replace with real API call, e.g.:
-    // await api.post("/budget/sync", { months });
+    // TODO: replace with real API call
     return Promise.resolve();
   };
 
@@ -196,6 +264,9 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
       addItem,
       removeItem,
       updateItem,
+      toggleSpent,
+      setMonthIncome,
+      copyItemsFromPrevMonth,
       isBudgetLoaded,
       syncToCloud,
     }),
