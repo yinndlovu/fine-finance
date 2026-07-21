@@ -2,21 +2,21 @@
   "expo": {
     "name": "My Finances",
     "slug": "fine-finance",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/app-background.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./src/assets/app-background.png",
       "resizeMode": "contain",
-      "backgroundColor": "#180038"
+      "backgroundColor": "#0A0710"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#180038",
+        "backgroundColor": "#0A0710",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
