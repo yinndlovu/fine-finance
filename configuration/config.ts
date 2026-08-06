@@ -3,4 +3,4 @@
  */
 export const API_BASE_URL = "https://api.com/api";
 
-export const APP_VERSION = "1.0.1";
+export const APP_VERSION = "1.0.2";
