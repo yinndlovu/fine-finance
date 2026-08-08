@@ -6,6 +6,7 @@ export interface BudgetItem {
   notes?: string;
   createdAt: string;
   spent: boolean; // true = money has been spent on this item
+  subscriptionId?: string;
 }
 
 export interface MonthBudget {

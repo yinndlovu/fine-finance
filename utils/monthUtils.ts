@@ -26,3 +26,7 @@ export const isCurrentMonth = (key: string): boolean =>
 /** true when the key is in the future relative to today */
 export const isFutureMonth = (key: string): boolean =>
   key > toMonthKey(new Date());
+
+/** returns the "YYYY-MM" key n months ahead of the given key */
+export const addMonthsToKey = (key: string, n: number): string =>
+  toMonthKey(addMonths(fromMonthKey(key), n));

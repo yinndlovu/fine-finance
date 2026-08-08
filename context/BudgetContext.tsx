@@ -13,11 +13,8 @@ import {
 import { BudgetItem, MonthBudget } from "../types/budget";
 import { toMonthKey, prevMonthKey } from "../utils/monthUtils";
 
-// types
 type BudgetContextType = {
-  // all months that have data, keyed by "YYYY-MM"
   months: Record<string, MonthBudget>;
-  // currently viewed month key ("YYYY-MM")
   activeMonthKey: string;
   setActiveMonthKey: (key: string) => void;
   addItem: (item: BudgetItem) => void;
@@ -25,6 +22,15 @@ type BudgetContextType = {
   updateItem: (monthKey: string, item: BudgetItem) => void;
   toggleSpent: (monthKey: string, itemId: string) => void;
   setMonthIncome: (monthKey: string, income: number) => void;
+  /** Batch-add subscription items across many months in one setState */
+  addSubscriptionItemsBatch: (
+    entries: { monthKey: string; item: BudgetItem }[],
+  ) => void;
+  /** Remove all items with the given subscriptionId from months >= fromMonthKey */
+  removeSubscriptionItems: (
+    subscriptionId: string,
+    fromMonthKey: string,
+  ) => void;
   copyItemsFromPrevMonth: (monthKey: string) => void;
   isBudgetLoaded: boolean;
   syncToCloud: () => Promise<void>;
@@ -38,15 +44,11 @@ const STORAGE_KEYS = {
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
 
 const validateItem = (i: any): BudgetItem | null => {
-  if (!i || typeof i !== "object") {
-    return null;
-  }
+  if (!i || typeof i !== "object") return null;
   const id = String(i.id ?? "");
   const name = String(i.name ?? "");
   const createdAt = String(i.createdAt ?? "");
-  if (!id || !name || !createdAt) {
-    return null;
-  }
+  if (!id || !name || !createdAt) return null;
   return {
     id,
     name,
@@ -55,6 +57,8 @@ const validateItem = (i: any): BudgetItem | null => {
     notes: typeof i.notes === "string" ? i.notes : undefined,
     createdAt,
     spent: Boolean(i.spent ?? false),
+    subscriptionId:
+      typeof i.subscriptionId === "string" ? i.subscriptionId : undefined,
   };
 };
 
@@ -65,7 +69,6 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
   );
   const [isBudgetLoaded, setIsBudgetLoaded] = useState(false);
 
-  // load from AsyncStorage on mount
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -74,10 +77,7 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
           AsyncStorage.getItem(STORAGE_KEYS.months),
           AsyncStorage.getItem(STORAGE_KEYS.activeMonthKey),
         ]);
-
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         if (storedMonthsJson) {
           const parsed = JSON.parse(storedMonthsJson) as unknown;
@@ -104,7 +104,6 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
             setMonths(validated);
           }
         }
-
         if (storedActiveKey && /^\d{4}-\d{2}$/.test(storedActiveKey)) {
           setActiveMonthKeyState(storedActiveKey);
         }
@@ -114,18 +113,14 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
           setActiveMonthKeyState(toMonthKey(new Date()));
         }
       } finally {
-        if (isMounted) {
-          setIsBudgetLoaded(true);
-        }
+        if (isMounted) setIsBudgetLoaded(true);
       }
     })();
-
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // persist months
   useEffect(() => {
     if (!isBudgetLoaded) return;
     AsyncStorage.setItem(STORAGE_KEYS.months, JSON.stringify(months)).catch(
@@ -133,17 +128,13 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
     );
   }, [months, isBudgetLoaded]);
 
-  // persist active month key
   useEffect(() => {
-    if (!isBudgetLoaded) {
-      return;
-    }
+    if (!isBudgetLoaded) return;
     AsyncStorage.setItem(STORAGE_KEYS.activeMonthKey, activeMonthKey).catch(
       () => {},
     );
   }, [activeMonthKey, isBudgetLoaded]);
 
-  // actions
   const setActiveMonthKey = (key: string) => setActiveMonthKeyState(key);
 
   const addItem = (item: BudgetItem) => {
@@ -160,9 +151,7 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
   const removeItem = (monthKey: string, itemId: string) => {
     setMonths((prev) => {
       const existing = prev[monthKey];
-      if (!existing) {
-        return prev;
-      }
+      if (!existing) return prev;
       return {
         ...prev,
         [monthKey]: {
@@ -176,9 +165,7 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
   const updateItem = (monthKey: string, updated: BudgetItem) => {
     setMonths((prev) => {
       const existing = prev[monthKey];
-      if (!existing) {
-        return prev;
-      }
+      if (!existing) return prev;
       return {
         ...prev,
         [monthKey]: {
@@ -192,9 +179,7 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
   const toggleSpent = (monthKey: string, itemId: string) => {
     setMonths((prev) => {
       const existing = prev[monthKey];
-      if (!existing) {
-        return prev;
-      }
+      if (!existing) return prev;
       return {
         ...prev,
         [monthKey]: {
@@ -214,47 +199,83 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const addSubscriptionItemsBatch = (
+    entries: { monthKey: string; item: BudgetItem }[],
+  ) => {
+    setMonths((prev) => {
+      const next: Record<string, MonthBudget> = { ...prev };
+      for (const { monthKey, item } of entries) {
+        const existing = next[monthKey] ?? { monthKey, income: 0, items: [] };
+        if (existing.items.some((i) => i.id === item.id)) continue;
+        next[monthKey] = { ...existing, items: [...existing.items, item] };
+      }
+      return next;
+    });
+  };
+
+  const removeSubscriptionItems = (
+    subscriptionId: string,
+    fromMonthKey: string,
+  ) => {
+    setMonths((prev) => {
+      const next: Record<string, MonthBudget> = { ...prev };
+      for (const key of Object.keys(next)) {
+        if (key >= fromMonthKey) {
+          const filtered = next[key].items.filter(
+            (i) => i.subscriptionId !== subscriptionId,
+          );
+          if (filtered.length === 0 && next[key].income === 0) {
+            delete next[key];
+          } else {
+            next[key] = { ...next[key], items: filtered };
+          }
+        }
+      }
+      return next;
+    });
+  };
+
   /**
-   * copies items from the previous month into this month (resetting spent),
-   * also carries the income forward. Only works if this month has no items yet
+   * Copies only regular (non-subscription) items from the previous month.
+   * Only blocked if the target month already has regular items.
+   * Subscription items already injected into the target month are preserved.
    */
   const copyItemsFromPrevMonth = (monthKey: string) => {
     setMonths((prev) => {
       const prevKey = prevMonthKey(monthKey);
       const source = prev[prevKey];
-      if (!source) {
-        return prev;
-      }
+      if (!source) return prev;
+
       const existing = prev[monthKey] ?? { monthKey, income: 0, items: [] };
-      // don't overwrite if already has items
-      if (existing.items.length > 0) {
-        return prev;
-      }
-      const copiedItems: BudgetItem[] = source.items.map((i) => ({
-        ...i,
-        id: `${i.id}_copy_${monthKey}`,
-        spent: false,
-        createdAt: new Date(
-          parseInt(monthKey.slice(0, 4)),
-          parseInt(monthKey.slice(5, 7)) - 1,
-          1,
-        ).toISOString(),
-      }));
+      const existingRegular = existing.items.filter((i) => !i.subscriptionId);
+      if (existingRegular.length > 0) return prev;
+
+      const copiedItems: BudgetItem[] = source.items
+        .filter((i) => !i.subscriptionId)
+        .map((i) => ({
+          ...i,
+          id: `${i.id}_copy_${monthKey}`,
+          spent: false,
+          createdAt: new Date(
+            parseInt(monthKey.slice(0, 4)),
+            parseInt(monthKey.slice(5, 7)) - 1,
+            1,
+          ).toISOString(),
+        }));
+
+      const existingSubItems = existing.items.filter((i) => i.subscriptionId);
       return {
         ...prev,
         [monthKey]: {
           monthKey,
           income: existing.income > 0 ? existing.income : source.income,
-          items: copiedItems,
+          items: [...copiedItems, ...existingSubItems],
         },
       };
     });
   };
 
-  const syncToCloud = async (): Promise<void> => {
-    // TODO: replace with real API call
-    return Promise.resolve();
-  };
+  const syncToCloud = async (): Promise<void> => Promise.resolve();
 
   const value = useMemo(
     () => ({
@@ -266,6 +287,8 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
       updateItem,
       toggleSpent,
       setMonthIncome,
+      addSubscriptionItemsBatch,
+      removeSubscriptionItems,
       copyItemsFromPrevMonth,
       isBudgetLoaded,
       syncToCloud,
@@ -280,8 +303,6 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
 
 export const useBudget = () => {
   const context = useContext(BudgetContext);
-  if (!context) {
-    throw new Error("useBudget must be used within BudgetProvider");
-  }
+  if (!context) throw new Error("useBudget must be used within BudgetProvider");
   return context;
 };
