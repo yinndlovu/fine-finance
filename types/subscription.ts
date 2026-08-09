@@ -1,3 +1,5 @@
+import { ImageSourcePropType } from "react-native";
+
 export interface SubscriptionPlan {
   id: string;
   name: string;
@@ -8,7 +10,7 @@ export interface ServiceDefinition {
   id: string;
   name: string;
   category: string;
-  logoUri: string;
+  logoUri: string | ImageSourcePropType;
   plans: SubscriptionPlan[];
   isCustom?: boolean;
 }
@@ -21,7 +23,7 @@ export interface ActiveSubscription {
   planName: string;
   price: number;
   category: string;
-  logoUri: string;
+  logoUri: string | ImageSourcePropType;
   startMonthKey: string;
   endMonthKey: string | null;
 }

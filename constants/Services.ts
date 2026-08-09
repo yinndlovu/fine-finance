@@ -1,14 +1,11 @@
 import { ServiceDefinition } from "../types/subscription";
 
-const logo = (domain: string) =>
-  `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
-
 export const PREDEFINED_SERVICES: ServiceDefinition[] = [
   {
     id: "netflix",
     name: "Netflix",
     category: "entertainment",
-    logoUri: logo("netflix.com"),
+    logoUri: require("../assets/services-icons/netflix.png"),
     plans: [
       { id: "mobile", name: "Mobile", price: 59 },
       { id: "basic", name: "Basic", price: 99 },
@@ -20,7 +17,7 @@ export const PREDEFINED_SERVICES: ServiceDefinition[] = [
     id: "xbox-gamepass",
     name: "Xbox Game Pass",
     category: "entertainment",
-    logoUri: logo("xbox.com"),
+    logoUri: require("../assets/services-icons/xbox.png"),
     plans: [
       { id: "essential", name: "Essential Game Pass", price: 139 },
       { id: "premium", name: "Premium Game Pass", price: 199 },
@@ -32,7 +29,7 @@ export const PREDEFINED_SERVICES: ServiceDefinition[] = [
     id: "spotify",
     name: "Spotify",
     category: "entertainment",
-    logoUri: logo("spotify.com"),
+    logoUri: require("../assets/services-icons/spotify.png"),
     plans: [
       { id: "student", name: "Student", price: 38 },
       { id: "standard", name: "Standard", price: 70 },
@@ -43,7 +40,7 @@ export const PREDEFINED_SERVICES: ServiceDefinition[] = [
     id: "audible",
     name: "Audible",
     category: "education",
-    logoUri: logo("audible.com"),
+    logoUri: require("../assets/services-icons/audible.png"),
     plans: [
       { id: "basic", name: "Basic (1 credit)", price: 99 },
       { id: "premium", name: "Premium Plus", price: 149 },
@@ -53,7 +50,7 @@ export const PREDEFINED_SERVICES: ServiceDefinition[] = [
     id: "apple-music",
     name: "Apple Music",
     category: "entertainment",
-    logoUri: logo("music.apple.com"),
+    logoUri: require("../assets/services-icons/apple-music.png"),
     plans: [
       { id: "student", name: "Student", price: 38 },
       { id: "individual", name: "Individual", price: 70 },
