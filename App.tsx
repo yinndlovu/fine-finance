@@ -1,7 +1,10 @@
 // external
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import { ReactNode, useCallback } from "react";
@@ -31,9 +34,10 @@ SplashScreen.preventAutoHideAsync();
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-/** Bottom tabs — Home (budget) and Subscriptions */
 const MainTabs = () => {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const TAB_BAR_BODY = 56;
 
   return (
     <Tab.Navigator
@@ -41,15 +45,19 @@ const MainTabs = () => {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: theme.card,
-          borderTopColor: theme.accent,
           borderTopWidth: 1,
+          borderTopColor: theme.accent,
+          height: TAB_BAR_BODY + insets.bottom,
+          paddingBottom: insets.bottom + 4,
+          paddingTop: 8,
+          elevation: 0,
+          shadowOpacity: 0,
         },
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.subtext,
         tabBarLabelStyle: {
           fontFamily: "App-Medium",
           fontSize: 11,
-          marginBottom: 2,
         },
         tabBarIcon: ({ focused, color, size }) => {
           if (route.name === "Home") {
@@ -97,18 +105,9 @@ const AppContent = () => {
             cardStyle: { backgroundColor: theme.background },
           }}
         >
-          {/* tabs sit at the root */}
           <Stack.Screen name="MainTabs" component={MainTabs} />
-
-          {/* regular stack screens */}
           <Stack.Screen name="History" component={HistoryScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
-
-          {/*
-           * transparentModal screens — these replace all RN Modal components.
-           * The previous screen stays visible behind the dim backdrop.
-           * KAV works correctly because there is no separate Modal window.
-           */}
           <Stack.Screen
             name="AddItem"
             component={AddItemScreen}
@@ -176,10 +175,14 @@ export default function App() {
   });
 
   const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded || fontError) await SplashScreen.hideAsync();
+    if (fontsLoaded || fontError) {
+      await SplashScreen.hideAsync();
+    }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) return null;
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
 
   return (
     <ThemeProvider>
@@ -187,10 +190,6 @@ export default function App() {
         <RootView onLayout={onLayoutRootView}>
           <PreferencesProvider>
             <BudgetProvider>
-              {/*
-               * SubscriptionProvider is inside BudgetProvider so it can
-               * call useBudget() to inject/remove budget items.
-               */}
               <SubscriptionProvider>
                 <AppContent />
               </SubscriptionProvider>

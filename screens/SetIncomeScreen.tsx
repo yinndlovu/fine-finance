@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+// external
+import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
-  Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -12,6 +12,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+// internal
 import { useTheme } from "../context/ThemeContext";
 import { useBudget } from "../context/BudgetContext";
 import { usePreferences } from "../context/PreferencesContext";
@@ -19,6 +20,7 @@ import { AppText } from "../components/AppText";
 import { monthLabel } from "../utils/monthUtils";
 
 const SetIncomeScreen: React.FC = () => {
+  // hook variables
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { theme } = useTheme();
@@ -26,16 +28,19 @@ const SetIncomeScreen: React.FC = () => {
   const { setMonthIncome } = useBudget();
   const { currencySymbol } = usePreferences();
 
+  // route params
   const { monthKey, currentIncome } = route.params as {
     monthKey: string;
     currentIncome: number;
   };
 
+  // states
   const [text, setText] = useState(
     currentIncome > 0 ? String(currentIncome) : "",
   );
   const [error, setError] = useState("");
 
+  // handlers
   const handleSave = () => {
     const parsed = parseFloat(text.replace(",", "."));
     if (isNaN(parsed) || parsed < 0) {
@@ -48,14 +53,11 @@ const SetIncomeScreen: React.FC = () => {
 
   return (
     <View style={styles.root}>
-      <TouchableWithoutFeedback onPress={() => navigation.goBack()}>
-        <View style={styles.backdrop} />
-      </TouchableWithoutFeedback>
+      <KeyboardAvoidingView behavior="padding" style={styles.kav}>
+        <TouchableWithoutFeedback onPress={() => navigation.goBack()}>
+          <View style={styles.backdrop} />
+        </TouchableWithoutFeedback>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.kav}
-      >
         <View
           style={[
             styles.sheet,
@@ -136,14 +138,14 @@ const SetIncomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  kav: {
+    flex: 1,
     justifyContent: "flex-end",
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0,0,0,0.45)",
-  },
-  kav: {
-    width: "100%",
   },
   sheet: {
     borderTopLeftRadius: 24,

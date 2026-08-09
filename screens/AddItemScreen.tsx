@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -25,24 +24,28 @@ import { fromMonthKey } from "../utils/monthUtils";
 import { CATEGORIES } from "../constants/Categories";
 
 const AddItemScreen: React.FC = () => {
+  // hook variables
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { addItem, updateItem } = useBudget();
 
+  // route params
   const { activeMonthKey, editItem } = route.params as {
     activeMonthKey: string;
     editItem?: BudgetItem;
   };
   const isEditing = !!editItem;
 
+  // states
   const [name, setName] = useState("");
   const [amountText, setAmountText] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
 
+  // use effects
   useEffect(() => {
     if (editItem) {
       setName(editItem.name);
@@ -52,6 +55,7 @@ const AddItemScreen: React.FC = () => {
     }
   }, []);
 
+  // handlers
   const handleSubmit = () => {
     const trimmedName = name.trim();
     const parsedAmount = parseFloat(amountText.replace(",", "."));
@@ -91,22 +95,12 @@ const AddItemScreen: React.FC = () => {
   };
 
   return (
-    // Full-screen container — transparent so the previous screen shows through
     <View style={styles.root}>
-      {/* Dim backdrop — tap to dismiss */}
-      <TouchableWithoutFeedback onPress={() => navigation.goBack()}>
-        <View style={styles.backdrop} />
-      </TouchableWithoutFeedback>
+      <KeyboardAvoidingView behavior="padding" style={styles.kav}>
+        <TouchableWithoutFeedback onPress={() => navigation.goBack()}>
+          <View style={styles.backdrop} />
+        </TouchableWithoutFeedback>
 
-      {/*
-       * KAV sits at the bottom of the flex-end root.
-       * Because this is a real screen (not a Modal), KAV can measure the
-       * keyboard correctly on both platforms.
-       */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.kav}
-      >
         <View
           style={[
             styles.sheet,
@@ -116,7 +110,6 @@ const AddItemScreen: React.FC = () => {
             },
           ]}
         >
-          {/* header */}
           <View style={styles.row}>
             <AppText
               variant="bold"
@@ -265,14 +258,14 @@ const AddItemScreen: React.FC = () => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  kav: {
+    flex: 1,
     justifyContent: "flex-end",
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0,0,0,0.45)",
-  },
-  kav: {
-    width: "100%",
   },
   sheet: {
     borderTopLeftRadius: 24,

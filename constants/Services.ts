@@ -1,14 +1,18 @@
 import { ServiceDefinition } from "../types/subscription";
 
+const logo = (domain: string) =>
+  `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
+
 export const PREDEFINED_SERVICES: ServiceDefinition[] = [
   {
     id: "netflix",
     name: "Netflix",
     category: "entertainment",
-    logoUri: "https://logo.clearbit.com/netflix.com",
+    logoUri: logo("netflix.com"),
     plans: [
-      { id: "ads", name: "Standard with Ads", price: 99 },
-      { id: "standard", name: "Standard", price: 169 },
+      { id: "mobile", name: "Mobile", price: 59 },
+      { id: "basic", name: "Basic", price: 99 },
+      { id: "standard", name: "Standard", price: 179 },
       { id: "premium", name: "Premium", price: 229 },
     ],
   },
@@ -16,29 +20,30 @@ export const PREDEFINED_SERVICES: ServiceDefinition[] = [
     id: "xbox-gamepass",
     name: "Xbox Game Pass",
     category: "entertainment",
-    logoUri: "https://logo.clearbit.com/xbox.com",
+    logoUri: logo("xbox.com"),
     plans: [
-      { id: "pc", name: "PC Game Pass", price: 79 },
-      { id: "ultimate", name: "Game Pass Ultimate", price: 149 },
+      { id: "essential", name: "Essential Game Pass", price: 139 },
+      { id: "premium", name: "Premium Game Pass", price: 199 },
+      { id: "pc", name: "PC Game Pass", price: 209 },
+      { id: "ultimate", name: "Game Pass Ultimate", price: 239 },
     ],
   },
   {
     id: "spotify",
     name: "Spotify",
     category: "entertainment",
-    logoUri: "https://logo.clearbit.com/spotify.com",
+    logoUri: logo("spotify.com"),
     plans: [
-      { id: "individual", name: "Individual", price: 89 },
-      { id: "duo", name: "Duo", price: 109 },
-      { id: "family", name: "Family", price: 149 },
-      { id: "student", name: "Student", price: 45 },
+      { id: "student", name: "Student", price: 38 },
+      { id: "standard", name: "Standard", price: 70 },
+      { id: "platinum", name: "Platinum", price: 180 },
     ],
   },
   {
     id: "audible",
     name: "Audible",
     category: "education",
-    logoUri: "https://logo.clearbit.com/audible.com",
+    logoUri: logo("audible.com"),
     plans: [
       { id: "basic", name: "Basic (1 credit)", price: 99 },
       { id: "premium", name: "Premium Plus", price: 149 },
@@ -48,11 +53,11 @@ export const PREDEFINED_SERVICES: ServiceDefinition[] = [
     id: "apple-music",
     name: "Apple Music",
     category: "entertainment",
-    logoUri: "https://logo.clearbit.com/apple.com",
+    logoUri: logo("music.apple.com"),
     plans: [
-      { id: "student", name: "Student", price: 59 },
-      { id: "individual", name: "Individual", price: 89 },
-      { id: "family", name: "Family", price: 139 },
+      { id: "student", name: "Student", price: 38 },
+      { id: "individual", name: "Individual", price: 70 },
+      { id: "family", name: "Family", price: 129 },
     ],
   },
 ];
