@@ -1,3 +1,4 @@
+// external
 import React, { useState } from "react";
 import {
   Alert,
@@ -16,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+// internal
 import { useTheme } from "../context/ThemeContext";
 import { useSubscriptions } from "../context/SubscriptionContext";
 import { AppText } from "../components/AppText";
@@ -23,11 +25,13 @@ import { CATEGORIES } from "../constants/Categories";
 import { SubscriptionPlan } from "../types/subscription";
 
 const AddCustomServiceScreen: React.FC = () => {
+  // hook variables
   const navigation = useNavigation<any>();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { addCustomService } = useSubscriptions();
 
+  // states
   const [name, setName] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [logoUri, setLogoUri] = useState("");
@@ -36,6 +40,7 @@ const AddCustomServiceScreen: React.FC = () => {
   ]);
   const [error, setError] = useState("");
 
+  // helpers
   const pickIcon = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -56,6 +61,7 @@ const AddCustomServiceScreen: React.FC = () => {
     }
   };
 
+  // handlers
   const addPlan = () => {
     setPlans((prev) => [
       ...prev,

@@ -25,13 +25,12 @@ import {
   isFutureMonth,
   prevMonthKey as getPrevKey,
 } from "../utils/monthUtils";
-import AddItemModal from "../components/AddItemModal";
-import SetIncomeModal from "../components/SetIncomeModal";
 import ItemActionSheet from "../components/ItemActionSheet";
 import CategoryBreakdown from "../components/CategoryBreakdown";
 import { BudgetItem } from "../types/budget";
 
 const HomeScreen: React.FC = () => {
+  // hook variables
   const navigation = useNavigation<any>();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -60,11 +59,10 @@ const HomeScreen: React.FC = () => {
     categoryTotals,
   } = useBudgetMonth();
 
-  const [isAddModalVisible, setAddModalVisible] = useState(false);
-  const [isIncomeModalVisible, setIncomeModalVisible] = useState(false);
+  // states
   const [actionItem, setActionItem] = useState<BudgetItem | null>(null);
-  const [editItem, setEditItem] = useState<BudgetItem | undefined>(undefined);
 
+  // derived values
   const isCurrent = isCurrentMonth(activeMonthKey);
   const isFuture = isFutureMonth(activeMonthKey);
   const isDisposableNegative = disposable < 0;
@@ -76,13 +74,9 @@ const HomeScreen: React.FC = () => {
   const prevHasItems = (months[prevKey]?.items?.length ?? 0) > 0;
   const showCopyPrompt = isEmpty && prevHasItems;
 
+  // handlers
   const handleLongPress = (item: BudgetItem) => {
     setActionItem(item);
-  };
-
-  const handleEdit = (item: BudgetItem) => {
-    setEditItem(item);
-    setAddModalVisible(true);
   };
 
   const handleDelete = (item: BudgetItem) => {
@@ -94,11 +88,6 @@ const HomeScreen: React.FC = () => {
         onPress: () => removeItem(activeMonthKey, item.id),
       },
     ]);
-  };
-
-  const handleAddClose = () => {
-    setAddModalVisible(false);
-    setEditItem(undefined);
   };
 
   // summary stats
@@ -454,21 +443,6 @@ const HomeScreen: React.FC = () => {
             <CategoryBreakdown rows={categoryTotals} totalBudgeted={budgeted} />
           ) : null
         }
-      />
-
-      {/* modals */}
-      <AddItemModal
-        isVisible={isAddModalVisible}
-        activeMonthKey={activeMonthKey}
-        editItem={editItem}
-        onClose={handleAddClose}
-      />
-
-      <SetIncomeModal
-        isVisible={isIncomeModalVisible}
-        monthKey={activeMonthKey}
-        currentIncome={income}
-        onClose={() => setIncomeModalVisible(false)}
       />
 
       <ItemActionSheet

@@ -29,11 +29,15 @@ const resolveIncome = (
   months: Record<string, { income: number }>,
   monthKey: string,
 ): number => {
-  if (months[monthKey]?.income > 0) return months[monthKey].income;
+  if (months[monthKey]?.income > 0) {
+    return months[monthKey].income;
+  }
   let cursor = monthKey;
   for (let i = 0; i < 12; i++) {
     cursor = prevMonthKey(cursor);
-    if (months[cursor]?.income > 0) return months[cursor].income;
+    if (months[cursor]?.income > 0) {
+      return months[cursor].income;
+    }
   }
   return 0;
 };
@@ -58,8 +62,8 @@ export const useBudgetMonth = (): BudgetMonthStats => {
   );
 
   /**
-   * Subscription items only surface when the month has regular items.
-   * Empty months stay empty even if subscription items are pre-injected.
+   * subscription items only surface when the month has regular items
+   * empty months stay empty even if subscription items are pre-injected
    */
   const items = useMemo(
     () =>
@@ -95,10 +99,13 @@ export const useBudgetMonth = (): BudgetMonthStats => {
   const categoryTotals = useMemo(() => {
     const map: Record<string, { amount: number; spentAmount: number }> = {};
     for (const item of items) {
-      if (!map[item.category])
+      if (!map[item.category]) {
         map[item.category] = { amount: 0, spentAmount: 0 };
+      }
       map[item.category].amount += item.amount;
-      if (item.spent) map[item.category].spentAmount += item.amount;
+      if (item.spent) {
+        map[item.category].spentAmount += item.amount;
+      }
     }
     return Object.entries(map)
       .map(([category, v]) => ({ category, ...v }))

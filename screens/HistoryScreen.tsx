@@ -13,6 +13,7 @@ import { formatAmount } from "../utils/currencyUtils";
 import { monthLabel, isCurrentMonth, isFutureMonth } from "../utils/monthUtils";
 
 const HistoryScreen: React.FC = () => {
+  // hook variables
   const navigation = useNavigation<any>();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -22,6 +23,7 @@ const HistoryScreen: React.FC = () => {
   // all month keys sorted newest first
   const sortedKeys = Object.keys(months).sort((a, b) => (a > b ? -1 : 1));
 
+  // handlers
   const handleSelectMonth = (key: string) => {
     setActiveMonthKey(key);
     navigation.navigate("Home");

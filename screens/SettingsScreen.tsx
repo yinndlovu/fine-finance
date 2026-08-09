@@ -26,6 +26,7 @@ const SettingsScreen: React.FC = () => {
   // states
   const [symbolInput, setSymbolInput] = useState(currencySymbol);
 
+  // handlers
   const handleSymbolBlur = () => {
     const trimmed = symbolInput.trim();
     if (trimmed) {

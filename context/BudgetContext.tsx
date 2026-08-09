@@ -22,11 +22,9 @@ type BudgetContextType = {
   updateItem: (monthKey: string, item: BudgetItem) => void;
   toggleSpent: (monthKey: string, itemId: string) => void;
   setMonthIncome: (monthKey: string, income: number) => void;
-  /** Batch-add subscription items across many months in one setState */
   addSubscriptionItemsBatch: (
     entries: { monthKey: string; item: BudgetItem }[],
   ) => void;
-  /** Remove all items with the given subscriptionId from months >= fromMonthKey */
   removeSubscriptionItems: (
     subscriptionId: string,
     fromMonthKey: string,
@@ -44,11 +42,15 @@ const STORAGE_KEYS = {
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
 
 const validateItem = (i: any): BudgetItem | null => {
-  if (!i || typeof i !== "object") return null;
+  if (!i || typeof i !== "object") {
+    return null;
+  }
   const id = String(i.id ?? "");
   const name = String(i.name ?? "");
   const createdAt = String(i.createdAt ?? "");
-  if (!id || !name || !createdAt) return null;
+  if (!id || !name || !createdAt) {
+    return null;
+  }
   return {
     id,
     name,
@@ -77,8 +79,9 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
           AsyncStorage.getItem(STORAGE_KEYS.months),
           AsyncStorage.getItem(STORAGE_KEYS.activeMonthKey),
         ]);
-        if (!isMounted) return;
-
+        if (!isMounted) {
+          return;
+        }
         if (storedMonthsJson) {
           const parsed = JSON.parse(storedMonthsJson) as unknown;
           if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
@@ -113,7 +116,9 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
           setActiveMonthKeyState(toMonthKey(new Date()));
         }
       } finally {
-        if (isMounted) setIsBudgetLoaded(true);
+        if (isMounted) {
+          setIsBudgetLoaded(true);
+        }
       }
     })();
     return () => {
@@ -122,14 +127,18 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!isBudgetLoaded) return;
+    if (!isBudgetLoaded) {
+      return;
+    }
     AsyncStorage.setItem(STORAGE_KEYS.months, JSON.stringify(months)).catch(
       () => {},
     );
   }, [months, isBudgetLoaded]);
 
   useEffect(() => {
-    if (!isBudgetLoaded) return;
+    if (!isBudgetLoaded) {
+      return;
+    }
     AsyncStorage.setItem(STORAGE_KEYS.activeMonthKey, activeMonthKey).catch(
       () => {},
     );
@@ -151,7 +160,9 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
   const removeItem = (monthKey: string, itemId: string) => {
     setMonths((prev) => {
       const existing = prev[monthKey];
-      if (!existing) return prev;
+      if (!existing) {
+        return prev;
+      }
       return {
         ...prev,
         [monthKey]: {
@@ -165,7 +176,9 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
   const updateItem = (monthKey: string, updated: BudgetItem) => {
     setMonths((prev) => {
       const existing = prev[monthKey];
-      if (!existing) return prev;
+      if (!existing) {
+        return prev;
+      }
       return {
         ...prev,
         [monthKey]: {
@@ -179,7 +192,9 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
   const toggleSpent = (monthKey: string, itemId: string) => {
     setMonths((prev) => {
       const existing = prev[monthKey];
-      if (!existing) return prev;
+      if (!existing) {
+        return prev;
+      }
       return {
         ...prev,
         [monthKey]: {
@@ -206,7 +221,9 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
       const next: Record<string, MonthBudget> = { ...prev };
       for (const { monthKey, item } of entries) {
         const existing = next[monthKey] ?? { monthKey, income: 0, items: [] };
-        if (existing.items.some((i) => i.id === item.id)) continue;
+        if (existing.items.some((i) => i.id === item.id)) {
+          continue;
+        }
         next[monthKey] = { ...existing, items: [...existing.items, item] };
       }
       return next;
@@ -236,19 +253,23 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
   };
 
   /**
-   * Copies only regular (non-subscription) items from the previous month.
-   * Only blocked if the target month already has regular items.
-   * Subscription items already injected into the target month are preserved.
+   * copies only regular (non-subscription) items from the previous month
+   * only blocked if the target month already has regular items
+   * subscription items already injected into the target month are preserved
    */
   const copyItemsFromPrevMonth = (monthKey: string) => {
     setMonths((prev) => {
       const prevKey = prevMonthKey(monthKey);
       const source = prev[prevKey];
-      if (!source) return prev;
+      if (!source) {
+        return prev;
+      }
 
       const existing = prev[monthKey] ?? { monthKey, income: 0, items: [] };
       const existingRegular = existing.items.filter((i) => !i.subscriptionId);
-      if (existingRegular.length > 0) return prev;
+      if (existingRegular.length > 0) {
+        return prev;
+      }
 
       const copiedItems: BudgetItem[] = source.items
         .filter((i) => !i.subscriptionId)
@@ -303,6 +324,8 @@ export const BudgetProvider = ({ children }: { children: ReactNode }) => {
 
 export const useBudget = () => {
   const context = useContext(BudgetContext);
-  if (!context) throw new Error("useBudget must be used within BudgetProvider");
+  if (!context) {
+    throw new Error("useBudget must be used within BudgetProvider");
+  }
   return context;
 };

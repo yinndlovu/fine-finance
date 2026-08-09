@@ -52,7 +52,6 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(
 );
 
 export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
-  // Must be nested inside BudgetProvider
   const { addSubscriptionItemsBatch, removeSubscriptionItems } = useBudget();
 
   const [customServices, setCustomServices] = useState<ServiceDefinition[]>([]);
@@ -72,14 +71,20 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
           AsyncStorage.getItem(STORAGE_KEYS.customServices),
           AsyncStorage.getItem(STORAGE_KEYS.active),
         ]);
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
         if (customJson) {
           const parsed = JSON.parse(customJson);
-          if (Array.isArray(parsed)) setCustomServices(parsed);
+          if (Array.isArray(parsed)) {
+            setCustomServices(parsed);
+          }
         }
         if (activeJson) {
           const parsed = JSON.parse(activeJson);
-          if (Array.isArray(parsed)) setSubscriptions(parsed);
+          if (Array.isArray(parsed)) {
+            setSubscriptions(parsed);
+          }
         }
       } catch {
         // ignore
@@ -93,7 +98,9 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!isSubscriptionLoaded) return;
+    if (!isSubscriptionLoaded) {
+      return;
+    }
     AsyncStorage.setItem(
       STORAGE_KEYS.customServices,
       JSON.stringify(customServices),
@@ -101,7 +108,9 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   }, [customServices, isSubscriptionLoaded]);
 
   useEffect(() => {
-    if (!isSubscriptionLoaded) return;
+    if (!isSubscriptionLoaded) {
+      return;
+    }
     AsyncStorage.setItem(
       STORAGE_KEYS.active,
       JSON.stringify(subscriptions),
@@ -116,7 +125,9 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     startMonthKey: string,
   ) => {
     const service = services.find((s) => s.id === serviceId);
-    if (!service) return;
+    if (!service) {
+      return;
+    }
 
     const subId = uuidv4();
     const currentMonthKey = toMonthKey(new Date());
