@@ -6,11 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0A0710"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -28,7 +23,7 @@
     "web": {
       "favicon": "./assets/icon.png"
     },
-    "plugins": ["expo-splash-screen", "expo-status-bar"],
+    "plugins": ["expo-splash-screen", "expo-status-bar", "expo-font"],
     "extra": {
       "eas": {
         "projectId": "ff87657e-ce68-47ab-bb57-b668aaef1de7"

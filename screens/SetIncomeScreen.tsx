@@ -63,7 +63,7 @@ const SetIncomeScreen: React.FC = () => {
             styles.sheet,
             {
               backgroundColor: theme.card,
-              paddingBottom: Math.max(insets.bottom, 24),
+              paddingBottom: Math.max(insets.bottom + 16, 40),
             },
           ]}
         >

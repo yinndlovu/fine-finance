@@ -1,3 +1,4 @@
+// external
 import React, { useState } from "react";
 import {
   Alert,
@@ -49,12 +50,10 @@ const HomeScreen: React.FC = () => {
     income,
     budgeted,
     expense,
-    planned,
     disposable,
     fIncome,
     fBudgeted,
     fExpense,
-    fPlanned,
     fDisposable,
     categoryTotals,
   } = useBudgetMonth();
@@ -67,17 +66,15 @@ const HomeScreen: React.FC = () => {
   const isFuture = isFutureMonth(activeMonthKey);
   const isDisposableNegative = disposable < 0;
 
-  /** show "copy from last month" prompt only when the current month is empty
-   * and the previous month has items
-   */
   const prevKey = getPrevKey(activeMonthKey);
   const prevHasItems = (months[prevKey]?.items?.length ?? 0) > 0;
   const showCopyPrompt = isEmpty && prevHasItems;
 
   // handlers
-  const handleLongPress = (item: BudgetItem) => {
-    setActionItem(item);
-  };
+  const handleLongPress = (item: BudgetItem) => setActionItem(item);
+
+  const handleEdit = (item: BudgetItem) =>
+    navigation.navigate("AddItem", { activeMonthKey, editItem: item });
 
   const handleDelete = (item: BudgetItem) => {
     Alert.alert("delete item", `remove "${item.name}"?`, [
@@ -90,7 +87,6 @@ const HomeScreen: React.FC = () => {
     ]);
   };
 
-  // summary stats
   const StatBox = ({
     label,
     value,
@@ -138,7 +134,6 @@ const HomeScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
-  // single item card
   const renderItem = ({ item }: { item: BudgetItem }) => (
     <TouchableOpacity
       onPress={() => toggleSpent(activeMonthKey, item.id)}
@@ -154,7 +149,6 @@ const HomeScreen: React.FC = () => {
         },
       ]}
     >
-      {/* tick circle */}
       <View
         style={[
           styles.tick,
@@ -220,7 +214,6 @@ const HomeScreen: React.FC = () => {
         {
           backgroundColor: theme.background,
           paddingTop: insets.top,
-          paddingBottom: insets.bottom,
         },
       ]}
     >
@@ -274,7 +267,6 @@ const HomeScreen: React.FC = () => {
               >
                 <Ionicons name="chevron-back" size={20} color={theme.subtext} />
               </TouchableOpacity>
-
               <View style={styles.monthLabelWrap}>
                 <AppText
                   variant="bold"
@@ -304,7 +296,6 @@ const HomeScreen: React.FC = () => {
                   </View>
                 )}
               </View>
-
               <TouchableOpacity
                 onPress={() => setActiveMonthKey(nextMonthKey(activeMonthKey))}
                 style={styles.monthArrow}
@@ -317,29 +308,31 @@ const HomeScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-            {/* 4-stat summary card */}
+            {/* stats grid */}
             <View style={styles.statsGrid}>
-              {/* income */}
+              {/* income — tapping navigates to SetIncomeScreen (transparentModal) */}
               <StatBox
                 label="income"
                 value={income > 0 ? fIncome : "set income"}
                 color={theme.positive}
-                onPress={() => setIncomeModalVisible(true)}
+                onPress={() =>
+                  navigation.navigate("SetIncome", {
+                    monthKey: activeMonthKey,
+                    currentIncome: income,
+                  })
+                }
               />
-              {/* budgeted */}
               <StatBox
                 label="budgeted"
                 value={fBudgeted}
                 color={theme.primary}
               />
-              {/* expense */}
               <StatBox
                 label="expense"
                 value={fExpense}
                 color={theme.negative}
                 small
               />
-              {/* disposable */}
               <StatBox
                 label="disposable"
                 value={fDisposable}
@@ -348,7 +341,7 @@ const HomeScreen: React.FC = () => {
               />
             </View>
 
-            {/* section header */}
+            {/* section header + add button */}
             <View style={styles.sectionRow}>
               <AppText
                 variant="medium"
@@ -356,11 +349,11 @@ const HomeScreen: React.FC = () => {
               >
                 {isEmpty ? "" : "items"}
               </AppText>
+              {/* add button — navigates to AddItemScreen (transparentModal) */}
               <TouchableOpacity
-                onPress={() => {
-                  setEditItem(undefined);
-                  setAddModalVisible(true);
-                }}
+                onPress={() =>
+                  navigation.navigate("AddItem", { activeMonthKey })
+                }
                 style={styles.addButton}
               >
                 <Ionicons
@@ -425,7 +418,9 @@ const HomeScreen: React.FC = () => {
                     : "add your first budget item to get started."}
                 </AppText>
                 <TouchableOpacity
-                  onPress={() => setAddModalVisible(true)}
+                  onPress={() =>
+                    navigation.navigate("AddItem", { activeMonthKey })
+                  }
                   style={[styles.emptyCta, { backgroundColor: theme.primary }]}
                 >
                   <Ionicons name="add" size={18} color="white" />
