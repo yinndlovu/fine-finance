@@ -1,7 +1,10 @@
 // external
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import { ReactNode, useCallback } from "react";
@@ -43,16 +46,23 @@ const MainTabs = () => {
           backgroundColor: theme.card,
           borderTopWidth: 1,
           borderTopColor: theme.accent,
-          paddingTop: 8,
-          paddingBottom: Math.max(insets.bottom, 16),
+          height: insets.bottom + 72,
+          paddingTop: 2,
+          paddingBottom: insets.bottom + 16,
           elevation: 0,
           shadowOpacity: 0,
         },
+        tabBarItemStyle: {
+          paddingTop: 4,
+          paddingBottom: 4,
+        },
+        tabBarShowLabel: true,
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.subtext,
         tabBarLabelStyle: {
           fontFamily: "App-Medium",
           fontSize: 11,
+          marginBottom: 4,
         },
         tabBarIcon: ({ focused, color, size }) => {
           if (route.name === "Home") {

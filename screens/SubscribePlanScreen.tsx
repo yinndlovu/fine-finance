@@ -323,7 +323,6 @@ const styles = StyleSheet.create({
   category: {
     fontSize: 12,
     marginTop: 2,
-    textTransform: "capitalize",
   },
   sectionLabel: {
     fontSize: 11,
