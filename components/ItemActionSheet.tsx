@@ -7,6 +7,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 // internal
@@ -28,6 +29,7 @@ const ItemActionSheet: React.FC<Props> = ({
   onDelete,
 }) => {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   if (!item) {
     return null;
   }
@@ -42,7 +44,15 @@ const ItemActionSheet: React.FC<Props> = ({
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <View style={[styles.sheet, { backgroundColor: theme.card }]}>
+            <View
+              style={[
+                styles.sheet,
+                {
+                  backgroundColor: theme.card,
+                  paddingBottom: Math.max(insets.bottom + 16, 28),
+                },
+              ]}
+            >
               {/* item preview */}
               <View
                 style={[styles.preview, { borderBottomColor: theme.accent }]}
@@ -133,7 +143,6 @@ const styles = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: 28,
     overflow: "hidden",
   },
   preview: {
