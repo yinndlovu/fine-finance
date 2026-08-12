@@ -20,8 +20,14 @@ const HistoryScreen: React.FC = () => {
   const { months, setActiveMonthKey } = useBudget();
   const { currencySymbol, currencyPosition } = usePreferences();
 
+  // a month only counts as "budgeted" once it has at least one item the user actually added themselves
+  const hasBeenBudgeted = (key: string) =>
+    months[key]?.items.some((i) => !i.subscriptionId) ?? false;
+
   // all month keys sorted newest first
-  const sortedKeys = Object.keys(months).sort((a, b) => (a > b ? -1 : 1));
+  const sortedKeys = Object.keys(months)
+    .filter(hasBeenBudgeted)
+    .sort((a, b) => (a > b ? -1 : 1));
 
   // handlers
   const handleSelectMonth = (key: string) => {
